@@ -1,0 +1,58 @@
+# bsp, stack or float
+yabai -m config layout bsp
+
+yabai -m config window-placement second_child
+
+# padding
+yabai -m config top_padding 0
+yabai -m config bottom_padding 0
+yabai -m config left_padding 0
+yabai -m config right_padding 0
+yabai -m config window_gap 0
+
+
+######## MOUSE SETTINGS ######## 
+# mouse settings
+yabai -m config mouse_follows_focus on
+
+# modifier for clicking and dragging with mouse
+yabai -m config mouse_modifier alt
+
+# set modifier + left-click drag to move window
+yabai -m config mouse_action1 move
+
+# set modifier + right-click drag to resize window
+yabai -m config mouse_action2 resize
+
+# when window is dropped in center of another window, swap them (on edges it will split it)
+yabai -m mouse_drop_action swap
+
+
+######## APP SETTINGS ######## 
+# move specific apps to specific spaces
+yabai -m rule --add app="^WezTerm$"  space=1
+yabai -m rule --add app="^Google Chrome$" space=2
+yabai -m rule --add app="^Brave Browser$" space=2
+
+# disable these apps from being managed
+yabai -m rule --add app="^System Preferences$" manage=off
+yabai -m rule --add app="^Calculator$" manage=off
+yabai -m rule --add app="^Finder$" manage=off
+
+######## SCRIPTS ######## 
+
+# Auto restacking of browsers and terminals
+~/.config/yabai/restack.sh
+
+# # Borders
+# ~/.config/borders/bordersrc
+#
+# # changes the border color of stacked windows
+# yabai -m signal --add event=window_focused action="/Users/$(whoami)/.config/yabai/focused_border.sh"
+
+# Auto retile
+
+# yabai -m signal --add event=window_deminimized action="~/.config/yabai/restack.sh"
+
+# This is used only with bars
+# yabai -m config external_bar all:40:0
