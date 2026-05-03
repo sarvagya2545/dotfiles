@@ -1,0 +1,53 @@
+format = """
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$fill\
+$lua\
+$python\
+$nodejs\
+$golang\
+$cpp\
+$cmd_duration\
+$line_break\
+$character"""
+
+[directory]
+truncation_length = 3
+truncation_symbol = '../'
+
+[git_branch]
+style = 'fg:green'
+symbol = ' '
+format = '[on](#ffffff) [$symbol$branch ]($style)'
+
+[git_status]
+style = 'fg:green'
+format = '([$all_status$ahead_behind]($style) )'
+
+[fill]
+symbol = ' '
+
+# Languages config
+[python]
+symbol = '󰌠 '
+format = '[${symbol}${pyenv_prefix}($version )(\($virtualenv\) )]($style)'
+pyenv_prefix = ''
+version_format = '${raw}'
+
+[lua]
+symbol = ' '
+
+[nodejs]
+symbol = ' '
+
+[golang]
+symbol = ' '
+
+# Languages config end
+
+[cmd_duration]
+min_time = 500
+style = 'fg:white'
+format = '[$duration]($style)'
