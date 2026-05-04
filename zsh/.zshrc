@@ -133,3 +133,6 @@ setopt hist_expire_dups_first
 setopt hist_ignore_dups
 setopt hist_verify
 
+# Starship
+export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
+eval "$(starship init zsh)"

@@ -1,0 +1,64 @@
+format = """
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$fill\
+$lua\
+$python\
+$nodejs\
+$golang\
+$cpp\
+$cmd_duration\
+$line_break\
+$character"""
+
+[hostname]
+format = '[$hostname]($style) in '
+disabled = true
+
+[directory]
+truncation_length = 3
+truncation_symbol = '../'
+
+[git_branch]
+style = 'fg:green'
+symbol = ' '
+format = '[on](#ffffff) [$symbol$branch ]($style)'
+disabled = false
+
+[git_status]
+style = 'fg:green'
+format = '([$all_status$ahead_behind]($style) )'
+disabled = false
+
+[fill]
+symbol = ' '
+
+# Languages config
+[python]
+symbol = '󰌠 '
+format = '[${symbol}${pyenv_prefix}($version )(\($virtualenv\) )]($style)'
+pyenv_prefix = ''
+version_format = '${raw}'
+disabled = false
+
+[lua]
+symbol = ' '
+
+[nodejs]
+symbol = ' '
+format = '[$symbol($version )]($style)'
+version_format = '${raw}'
+disabled = false
+
+[golang]
+symbol = ' '
+
+# Languages config end
+
+[cmd_duration]
+min_time = 500
+style = 'fg:white'
+format = '[$duration]($style)'
