@@ -15,8 +15,9 @@ $line_break\
 $character"""
 
 [hostname]
-format = '[$hostname]($style) in '
-disabled = true
+format = '[$ssh_symbol$hostname ]($style)'
+disabled = false
+aliases = { 'coresight-dev-sarvagya' = 'gcp-dev' }
 
 [directory]
 truncation_length = 3
