@@ -43,6 +43,8 @@ symbol = '󰌠 '
 format = '[${symbol}${pyenv_prefix}($version )(\($virtualenv\) )]($style)'
 pyenv_prefix = ''
 version_format = '${raw}'
+detect_files = ['.python-version', 'Pipfile', '__init__.py', 'pyproject.toml', 'requirements.txt', 'setup.py', 'tox.ini']
+detect_extensions = ['py', 'ipynb']
 disabled = false
 
 [lua]

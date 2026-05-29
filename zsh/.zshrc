@@ -123,6 +123,7 @@ export PATH=/Users/sarvagya_sharma/.opencode/bin:$PATH
 export PATH="/usr/local/opt/llvm@15/bin:$PATH"
 export PATH=/Users/sarvagya_sharma/.duckdb/cli/latest:$PATH
 export PATH="$PATH:/Applications/WezTerm.app/Contents/MacOS"
+export PATH="/usr/local/mysql/bin:$PATH"
 
 # history setup
 HISTFILE=$HOME/.zhistory
@@ -136,3 +137,8 @@ setopt hist_verify
 # Starship
 export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
 eval "$(starship init zsh)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+export PATH="$PATH:$(go env GOPATH)/bin"
