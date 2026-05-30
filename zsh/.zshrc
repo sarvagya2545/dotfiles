@@ -112,7 +112,8 @@ alias air='/Users/sarvagya_sharma/go/bin/air'
 source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Less editor commands config
-export LESSOPEN="| $(brew --prefix source-highlight)/bin/src-hilite-lesspipe.sh %s"
+# export LESSOPEN="| $(brew --prefix source-highlight)/bin/src-hilite-lesspipe.sh %s"
+export LESSOPEN="| /usr/local/opt/source-highlight/bin/src-hilite-lesspipe.sh %s"
 export LESS=' -R --use-color -N -J --line-num-width 5 --incsearch'
 export SOURCE_HIGHLIGHT_STYLE=esc
 
@@ -124,6 +125,7 @@ export PATH="/usr/local/opt/llvm@15/bin:$PATH"
 export PATH=/Users/sarvagya_sharma/.duckdb/cli/latest:$PATH
 export PATH="$PATH:/Applications/WezTerm.app/Contents/MacOS"
 export PATH="/usr/local/mysql/bin:$PATH"
+export PATH="$HOME/dotfiles/bin:$PATH"
 
 # history setup
 HISTFILE=$HOME/.zhistory
@@ -139,6 +141,11 @@ export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
 eval "$(starship init zsh)"
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+nvm() {
+  unset -f nvm node npm npx
+  [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+  nvm "$@"
+}
 export PATH="$PATH:$(go env GOPATH)/bin"
+
+bindkey -s ^f "tmux-sessionizer\n"
