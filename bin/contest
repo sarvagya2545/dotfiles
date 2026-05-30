@@ -1,0 +1,150 @@
+#! /bin/bash
+
+# this is where the entire environment including the contest-files / template / contest folders, etc. lives
+# before the script begins, we cd into this directory and create Atcoder/ Codeforces/ Codechef/ subdirectories here
+DEFAULT_CONTEST_HOME="$HOME/.CP"
+
+# this is the default coding enviroment which gets replicated for each problem in the contest
+# this folder contains code.cpp, input.txt, output.txt, debug.txt, preprocessed header files, etc.
+DEFAULT_CONTEST_FILES="$HOME/.CP/contest-files/"
+
+go_to_contest_home_folder() {
+    # for changing this directory, set $CONTEST_HOME variable
+    if [ -z "$CONTEST_HOME" ]; then
+        CONTEST_HOME="$DEFAULT_CONTEST_HOME"
+    fi
+
+    if [[ -z "$CONTEST_HOME" || ! -d "$CONTEST_HOME" ]]; then
+        echo "Contest home not found! Exiting..." >&2
+        exit 1
+    fi
+
+    cd "$CONTEST_HOME" || exit 1
+}
+
+get_contest_files_path() {
+    if [ -z "$CONTEST_FILES" ]; then
+        CONTEST_FILES="$DEFAULT_CONTEST_FILES"
+    fi
+
+    if [[ -z "$CONTEST_FILES" || ! -d "$CONTEST_FILES" ]]; then
+        echo "Contest files environment not found! Exiting..." >&2
+        exit 1
+    fi
+
+    echo "$CONTEST_FILES"
+}
+
+get_contest_site_name() {
+    # Read contest site from input
+    read -p "Select the contest site: 
+    1. AtCoder
+    2. CodeChef
+    3. Codeforces
+    4. Leetcode
+    Enter the corresponding number here: " SITE_INDEX
+
+    folders=("AtCoder" "CodeChef" "Codeforces" "Leetcode")
+    NUM_FOLDERS=${#folders[@]}
+
+    if ! [[ "$SITE_INDEX" =~ ^[0-9]+$ ]] || (( SITE_INDEX < 1 || SITE_INDEX > NUM_FOLDERS )); then
+        echo "Invalid number" >&2
+        exit 1
+    fi
+
+    echo "${folders[SITE_INDEX - 1]}"
+}
+
+create_contest_folder() {
+    # create the folder with the name
+    # $1 -> $SITE, $2 -> $CONTEST_NAME
+    if [ ! -d "$1" ]; then
+        mkdir "$1";
+    fi
+
+    if [ -d "$1/$2" ]; then
+        rm -rf "$1/$2"
+    fi
+
+    mkdir "$1/$2"
+}
+
+read_contest_file_count() {
+    read -p "How many problem files should be created? " FILE_COUNT
+
+    if [[ FILE_COUNT -gt 26 ]]; then
+        echo "Sorry, cannot create more than 26 files" >&2
+        exit 1
+    fi
+    echo "$FILE_COUNT"
+}
+
+create_contest_files() {
+    # $1 -> $SITE, $2 -> $CONTEST_NAME, $3 -> $FILE_COUNT
+    CONTEST_FILES_PATH=$(get_contest_files_path)
+
+    # loop from 1 to FILE_COUNT ($3)
+    for (( a=1; a<="$3"; a++ ))
+    do
+        # Get the file name character
+        # https://stackoverflow.com/questions/890262/integer-ascii-value-to-character-in-bash-using-printf
+        FILE_CHAR=$(printf '%x' $(( a + 64 )) | xxd -p -r)
+
+        cp -R "$CONTEST_FILES_PATH" "$1/$2/$FILE_CHAR"
+    done
+}
+
+create_contest_tmux_session() {
+    # Open the tmux session for this contest from inside the folder
+    TMUX_SESSION_NAME="$1"
+    tmux new-session -d -s "$TMUX_SESSION_NAME"
+
+    for (( a=1; a<="$2"; a++ )); do
+        FILE_CHAR=$(printf '%x' $(( a + 64 )) | xxd -p -r)
+        CURRENT_WINDOW="$TMUX_SESSION_NAME:$FILE_CHAR"
+
+        tmux new-window -t "$TMUX_SESSION_NAME":"$(( a + 1 ))" -n "$FILE_CHAR"
+        tmux send-keys -t "$CURRENT_WINDOW" "export NVIM_CONTEST_MODE=1" Enter
+        tmux send-keys -t "$CURRENT_WINDOW" "cd $FILE_CHAR && nvim code.cpp -c 'rightbelow vsplit input.txt' -c 'rightbelow split output.txt' -c \"execute 'vertical resize ' . (&columns * 3 / 10)\" -c 'badd debug.txt' -c 'wincmd h'" Enter
+    done
+
+    # delete the initial window
+    tmux kill-window -t "$TMUX_SESSION_NAME":1
+
+    echo "$TMUX_SESSION_NAME"
+}
+
+################### SCRIPT STARTS FROM HERE ###################
+clear
+go_to_contest_home_folder
+
+SITE=$(get_contest_site_name) || exit 1
+
+echo "Site chosen: $SITE"
+echo "Enter the name of the contest(E.g. ABC250, 730Div2, Global24, etc.): "
+read -p "" CONTEST_NAME
+
+create_contest_folder "$SITE" "$CONTEST_NAME"
+
+echo
+echo
+echo "Folder created: $CONTEST_NAME"
+
+FILE_COUNT=$(read_contest_file_count) || exit 1
+create_contest_files "$SITE" "$CONTEST_NAME" "$FILE_COUNT"
+echo "Files created"
+
+cd "$SITE/$CONTEST_NAME" || exit 1
+
+TMUX_SESSION_NAME=$(create_contest_tmux_session "$CONTEST_NAME" "$FILE_COUNT")
+
+# select the 1st window for the contest
+tmux select-window -t "$TMUX_SESSION_NAME":1
+
+if [[ ! -z $TMUX ]]; then
+    tmux switch-client -t "$TMUX_SESSION_NAME"
+else
+    tmux attach -t "$TMUX_SESSION_NAME"
+fi
+
+# vim ft=sh

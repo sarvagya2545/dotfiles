@@ -78,7 +78,7 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(zsh-autosuggestions zsh-syntax-highlighting)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -149,3 +149,8 @@ nvm() {
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 bindkey -s ^f "tmux-sessionizer\n"
+
+#################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
+export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
+export CONTEST_FILES="$CONTEST_HOME/contest_files/"
+#################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
