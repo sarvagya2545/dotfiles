@@ -6,7 +6,10 @@ DEFAULT_CONTEST_HOME="$HOME/.CP"
 
 # this is the default coding enviroment which gets replicated for each problem in the contest
 # this folder contains code.cpp, input.txt, output.txt, debug.txt, preprocessed header files, etc.
-DEFAULT_CONTEST_FILES="$HOME/.CP/contest-files/"
+DEFAULT_CONTEST_FILES="$HOME/.CP/contest-files"
+
+# all the folders where we are going to create the contest files 
+sites=("AtCoder" "CodeChef" "Codeforces" "Leetcode")
 
 go_to_contest_home_folder() {
     # for changing this directory, set $CONTEST_HOME variable
@@ -36,7 +39,6 @@ get_contest_files_path() {
 }
 
 get_contest_site_name() {
-    # Read contest site from input
     read -p "Select the contest site: 
     1. AtCoder
     2. CodeChef
@@ -44,15 +46,14 @@ get_contest_site_name() {
     4. Leetcode
     Enter the corresponding number here: " SITE_INDEX
 
-    folders=("AtCoder" "CodeChef" "Codeforces" "Leetcode")
-    NUM_FOLDERS=${#folders[@]}
+    NUM_FOLDERS=${#sites[@]}
 
     if ! [[ "$SITE_INDEX" =~ ^[0-9]+$ ]] || (( SITE_INDEX < 1 || SITE_INDEX > NUM_FOLDERS )); then
         echo "Invalid number" >&2
         exit 1
     fi
 
-    echo "${folders[SITE_INDEX - 1]}"
+    echo "${sites[SITE_INDEX - 1]}"
 }
 
 create_contest_folder() {
@@ -77,6 +78,13 @@ read_contest_file_count() {
         exit 1
     fi
     echo "$FILE_COUNT"
+}
+
+# This function only works if we are already in the contest base folder
+get_contest_folder_problem_count() {
+    contest_path="$1"
+    contest_name="$2"
+    ls -ld "$SITE/$CONTEST_NAME/"* | wc -l
 }
 
 create_contest_files() {
@@ -110,33 +118,110 @@ create_contest_tmux_session() {
 
     # delete the initial window
     tmux kill-window -t "$TMUX_SESSION_NAME":1
+}
 
-    echo "$TMUX_SESSION_NAME"
+get_contest_sessions() {
+    for site in "${sites[@]}"; do
+        path="$CONTEST_HOME/$site"
+        [[ -d "$path" ]] && find "$path" -mindepth 1 -maxdepth 1 -type d -print | sed 's|.*/\([^/]*/[^/]*\)$|\1|'
+    done
+}
+
+dedup_session_name() {
+    TMUX_SESSION_NAME="$1"
+    # if there was a similar session from the existing contest, delete it
+    if tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; then
+
+        read -p "A session for this contest exists already. Kill session to proceed? (Y/n):" -n 1 -r
+        echo
+        if [[ -z $REPLY ]] || [[ $REPLY =~ ^[Yy]$ ]]; then 
+            echo "Killed session $TMUX_SESSION_NAME"
+            tmux kill-session -t "$TMUX_SESSION_NAME"
+        else
+            echo "Exited: cannot proceed, duplicate session exists"
+            exit 1
+        fi
+    fi
+}
+
+get_session_name() {
+    echo "$2"
 }
 
 ################### SCRIPT STARTS FROM HERE ###################
-clear
-go_to_contest_home_folder
+set -euo pipefail
 
-SITE=$(get_contest_site_name) || exit 1
+resume=0
 
-echo "Site chosen: $SITE"
-echo "Enter the name of the contest(E.g. ABC250, 730Div2, Global24, etc.): "
-read -p "" CONTEST_NAME
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -r|--resume)
+            resume=1
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            shift
+            ;;
+    esac
+done
 
-create_contest_folder "$SITE" "$CONTEST_NAME"
+if [[ $resume -eq 0 ]]; then
+    clear
+    go_to_contest_home_folder
 
-echo
-echo
-echo "Folder created: $CONTEST_NAME"
+    # Read contest site from input
+    SITE=$(get_contest_site_name) || exit 1
 
-FILE_COUNT=$(read_contest_file_count) || exit 1
-create_contest_files "$SITE" "$CONTEST_NAME" "$FILE_COUNT"
-echo "Files created"
+    # Read the contest title from input
+    echo "Site chosen: $SITE"
+    echo "Enter the name of the contest(E.g. ABC250, 730Div2, Global24, etc.): "
+    read -p "" CONTEST_NAME
 
-cd "$SITE/$CONTEST_NAME" || exit 1
+    # if the contest folder is not created, create it
+    create_contest_folder "$SITE" "$CONTEST_NAME"
 
-TMUX_SESSION_NAME=$(create_contest_tmux_session "$CONTEST_NAME" "$FILE_COUNT")
+    echo
+    echo
+    echo "Folder created: $CONTEST_NAME"
+
+    # Read the problem count from input
+    FILE_COUNT=$(read_contest_file_count) || exit 1
+
+    TMUX_SESSION_NAME=$(get_session_name "$SITE" "$CONTEST_NAME")
+
+    dedup_session_name "$TMUX_SESSION_NAME"
+
+    # create the contest files
+    create_contest_files "$SITE" "$CONTEST_NAME" "$FILE_COUNT"
+    echo "Files created"
+
+    cd "$SITE/$CONTEST_NAME" || exit 1
+
+    create_contest_tmux_session "$TMUX_SESSION_NAME" "$FILE_COUNT"
+else
+    # this opens a fzf menu with all the contest folders
+    selected=$(get_contest_sessions | fzf)
+
+    if [[ -z $selected ]]; then
+        exit 0
+    fi
+
+    SITE="${selected%/*}"
+    CONTEST_NAME="${selected#*/}"
+
+    go_to_contest_home_folder
+    
+    FILE_COUNT=$(get_contest_folder_problem_count "$SITE" "$CONTEST_NAME")
+
+    cd "$SITE/$CONTEST_NAME" || exit 1
+
+    TMUX_SESSION_NAME=$(get_session_name "$SITE" "$CONTEST_NAME")
+
+    if ! tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; then
+        create_contest_tmux_session "$TMUX_SESSION_NAME" "$FILE_COUNT"
+    fi
+fi
 
 # select the 1st window for the contest
 tmux select-window -t "$TMUX_SESSION_NAME":1
