@@ -226,7 +226,7 @@ fi
 # select the 1st window for the contest
 tmux select-window -t "$TMUX_SESSION_NAME":1
 
-if [[ ! -z $TMUX ]]; then
+if [[ -n "${TMUX:-}" ]]; then
     tmux switch-client -t "$TMUX_SESSION_NAME"
 else
     tmux attach -t "$TMUX_SESSION_NAME"

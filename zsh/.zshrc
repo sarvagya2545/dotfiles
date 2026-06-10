@@ -141,11 +141,16 @@ export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
 eval "$(starship init zsh)"
 
 export NVM_DIR="$HOME/.nvm"
-nvm() {
-  unset -f nvm node npm npx
-  [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-  nvm "$@"
-}
+# Load nvm only if it hasn't been loaded yet
+if [ -z "$NVM_LOADED" ]; then
+    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+    export NVM_LOADED=1
+fi
+# nvm() {
+#   unset -f nvm node npm npx
+#   [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+#   nvm "$@"
+# }
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 bindkey -s ^f "tmux-sessionizer\n"
@@ -154,3 +159,4 @@ bindkey -s ^f "tmux-sessionizer\n"
 export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
 export CONTEST_FILES="$CONTEST_HOME/contest_files/"
 #################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
+export PATH="$HOME/.local/bin:$PATH"
