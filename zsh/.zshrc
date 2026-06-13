@@ -156,9 +156,10 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 bindkey -s ^f "tmux-sessionizer\n"
 
 #################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
-export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
-export CONTEST_FILES="$CONTEST_HOME/contest_files/"
+# export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
+# export CONTEST_FILES="$CONTEST_HOME/contest_files/"
 #################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
+
 export PATH="$HOME/.local/bin:$PATH"
 
 # hide and show desktop apps easily
