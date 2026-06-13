@@ -2,5 +2,9 @@
 
 # Ignore temporary files, but keep the contest template files
 /contest_env/.CP/*
+
 !/contest_env/.CP/contest_files
 !/contest_env/.CP/contest_files/*
+
+!/contest_env/.CP/contest_templates
+!/contest_env/.CP/contest_templates/*

@@ -4,3 +4,6 @@
 [submodule "contest_env/.CP/contest_files"]
 	path = contest_env/.CP/contest_files
 	url = https://github.com/sarvagya2545/contest_files
+[submodule "contest_env/.CP/contest_templates"]
+	path = contest_env/.CP/contest_templates
+	url = https://github.com/sarvagya2545/contest_templates
