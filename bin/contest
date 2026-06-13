@@ -6,14 +6,14 @@ DEFAULT_CONTEST_HOME="$HOME/.CP"
 
 # this is the default coding enviroment which gets replicated for each problem in the contest
 # this folder contains code.cpp, input.txt, output.txt, debug.txt, preprocessed header files, etc.
-DEFAULT_CONTEST_FILES="$HOME/.CP/contest-files"
+DEFAULT_CONTEST_FILES="$HOME/.CP/contest_files"
 
 # all the folders where we are going to create the contest files 
 sites=("AtCoder" "CodeChef" "Codeforces" "Leetcode")
 
 go_to_contest_home_folder() {
     # for changing this directory, set $CONTEST_HOME variable
-    if [ -z "$CONTEST_HOME" ]; then
+    if [[ -z "${CONTEST_HOME:-}" ]]; then
         CONTEST_HOME="$DEFAULT_CONTEST_HOME"
     fi
 
@@ -26,7 +26,7 @@ go_to_contest_home_folder() {
 }
 
 get_contest_files_path() {
-    if [ -z "$CONTEST_FILES" ]; then
+    if [[ -z "${CONTEST_FILES:-}" ]]; then
         CONTEST_FILES="$DEFAULT_CONTEST_FILES"
     fi
 
@@ -89,7 +89,7 @@ get_contest_folder_problem_count() {
 
 create_contest_files() {
     # $1 -> $SITE, $2 -> $CONTEST_NAME, $3 -> $FILE_COUNT
-    CONTEST_FILES_PATH=$(get_contest_files_path)
+    CONTEST_FILES_PATH=$(get_contest_files_path) || exit 1
 
     # loop from 1 to FILE_COUNT ($3)
     for (( a=1; a<="$3"; a++ ))
