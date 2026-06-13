@@ -11,7 +11,7 @@ DEFAULT_CONTEST_FILES="$HOME/.CP/contest_files"
 # all the folders where we are going to create the contest files 
 sites=("AtCoder" "CodeChef" "Codeforces" "Leetcode")
 
-go_to_contest_home_folder() {
+get_contest_home_folder() {
     # for changing this directory, set $CONTEST_HOME variable
     if [[ -z "${CONTEST_HOME:-}" ]]; then
         CONTEST_HOME="$DEFAULT_CONTEST_HOME"
@@ -22,6 +22,11 @@ go_to_contest_home_folder() {
         exit 1
     fi
 
+    echo "$CONTEST_HOME"
+}
+
+go_to_contest_home_folder() {
+    CONTEST_HOME=$(get_contest_home_folder) || exit 1
     cd "$CONTEST_HOME" || exit 1
 }
 
@@ -84,7 +89,7 @@ read_contest_file_count() {
 get_contest_folder_problem_count() {
     contest_path="$1"
     contest_name="$2"
-    ls -ld "$SITE/$CONTEST_NAME/"* | wc -l
+    ls -ld "$contest_path/$contest_name/"* | wc -l
 }
 
 create_contest_files() {
@@ -121,6 +126,7 @@ create_contest_tmux_session() {
 }
 
 get_contest_sessions() {
+    CONTEST_HOME=$(get_contest_home_folder)
     for site in "${sites[@]}"; do
         path="$CONTEST_HOME/$site"
         [[ -d "$path" ]] && find "$path" -mindepth 1 -maxdepth 1 -type d -print | sed 's|.*/\([^/]*/[^/]*\)$|\1|'
@@ -201,7 +207,7 @@ if [[ $resume -eq 0 ]]; then
     create_contest_tmux_session "$TMUX_SESSION_NAME" "$FILE_COUNT"
 else
     # this opens a fzf menu with all the contest folders
-    selected=$(get_contest_sessions | fzf)
+    selected=$(get_contest_sessions | fzf) || true
 
     if [[ -z $selected ]]; then
         exit 0
