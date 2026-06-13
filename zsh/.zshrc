@@ -160,3 +160,7 @@ export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
 export CONTEST_FILES="$CONTEST_HOME/contest_files/"
 #################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
 export PATH="$HOME/.local/bin:$PATH"
+
+# hide and show desktop apps easily
+alias hide_desktop="defaults write com.apple.finder CreateDesktop false; killall Finder"
+alias show_desktop="defaults write com.apple.finder CreateDesktop true; killall Finder"
