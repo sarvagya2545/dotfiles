@@ -118,7 +118,13 @@ create_contest_tmux_session() {
 
         tmux new-window -t "$TMUX_SESSION_NAME":"$(( a + 1 ))" -n "$FILE_CHAR"
         tmux send-keys -t "$CURRENT_WINDOW" "export NVIM_CONTEST_MODE=1" Enter
-        tmux send-keys -t "$CURRENT_WINDOW" "cd $FILE_CHAR && nvim code.cpp -c 'rightbelow vsplit input.txt' -c 'rightbelow split output.txt' -c \"execute 'vertical resize ' . (&columns * 3 / 10)\" -c 'badd debug.txt' -c 'wincmd h'" Enter
+        tmux send-keys -t "$CURRENT_WINDOW" "cd $FILE_CHAR" Enter
+        tmux send-keys -t "$CURRENT_WINDOW" "nvim code.cpp \
+              -c 'rightbelow vsplit input.txt' \
+              -c 'rightbelow split output.txt' \
+              -c 'badd debug.txt' \
+              -c 'wincmd h' \
+              -c 'autocmd VimEnter * execute \"vertical resize \" . (&columns * 7 / 10)'" Enter
     done
 
     # delete the initial window
