@@ -131,6 +131,35 @@ abs="$WALLPAPER_DIR/$selected"
 [[ -f "$abs" ]] || { echo "File vanished: $abs" >&2; exit 1; }
 
 # ----------------------------------------------------------------------
+# Confirm before applying to every Space
+#   Show the (orientation-correct) selection inline and ask for a yes.
+#   Reuses the cached thumbnail the fzf preview already generated.
+# ----------------------------------------------------------------------
+cache_dir="${TMPDIR:-/tmp}/wallpaper-preview"
+mkdir -p "$cache_dir"
+key="$(printf '%s' "$abs" | shasum | cut -d' ' -f1)"
+mtime="$(stat -f %m "$abs" 2>/dev/null || echo 0)"
+norm="$cache_dir/${key}-${mtime}.png"
+if [[ ! -f "$norm" ]]; then
+    if qlmanage -t -s 2000 -o "$cache_dir" "$abs" >/dev/null 2>&1 \
+       && [[ -f "$cache_dir/$(basename "$abs").png" ]]; then
+        mv -f "$cache_dir/$(basename "$abs").png" "$norm"
+    else
+        norm="$abs"
+    fi
+fi
+
+printf '\n'
+"$WEZTERM_BIN" imgcat --width 60 --height 20 "$norm" 2>/dev/null || true
+printf '\n'
+printf 'Set "%s" as the wallpaper on EVERY Space?\n' "$selected"
+read -r -p "[y/N] " reply < /dev/tty || reply=""
+case "$reply" in
+    [yY]|[yY][eE][sS]) ;;
+    *) echo "Cancelled. Wallpaper unchanged."; exit 0 ;;
+esac
+
+# ----------------------------------------------------------------------
 # Apply to every Space (SIP-safe, no DB edits)
 #   Walk across Spaces with the default Ctrl+Left / Ctrl+Right shortcuts
 #   and set the visible desktop on each. Override with SPACES=N if needed.
