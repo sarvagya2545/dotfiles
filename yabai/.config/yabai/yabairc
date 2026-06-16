@@ -1,5 +1,5 @@
 # bsp, stack or float
-yabai -m config layout bsp
+yabai -m config layout stack
 
 yabai -m config window-placement second_child
 

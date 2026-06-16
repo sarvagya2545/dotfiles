@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+#
+# wallpaper.sh — pick a wallpaper with fzf (image preview in WezTerm)
+#                and apply it to every Space currently present.
+#
+# Usage:   ./wallpaper.sh
+#          WALLPAPER_DIR=~/Pictures/walls ./wallpaper.sh
+#
+set -euo pipefail
+
+WALLPAPER_DIR="${WALLPAPER_DIR:-$HOME/Downloads/wallpapers}"
+
+# Resolve the wezterm CLI (not always on PATH when installed as a .app)
+WEZTERM_BIN="$(command -v wezterm || true)"
+if [[ -z "$WEZTERM_BIN" && -x /Applications/WezTerm.app/Contents/MacOS/wezterm ]]; then
+    WEZTERM_BIN="/Applications/WezTerm.app/Contents/MacOS/wezterm"
+fi
+export WEZTERM_BIN
+
+# ----------------------------------------------------------------------
+# Preview mode: fzf calls this script back as `wallpaper.sh --preview FILE`
+# ----------------------------------------------------------------------
+
+if [[ "${1:-}" == "--preview" ]]; then
+    # Debounce: fzf kills this process when the selection changes. A short
+    # sleep means fast scrolling cancels the preview before it draws anything,
+    # so only the image you settle on actually renders -> no flicker.
+    sleep 0.05
+
+    img="$2"
+    cols="${FZF_PREVIEW_COLUMNS:-80}"
+    lines="${FZF_PREVIEW_LINES:-25}"
+
+    # --- Normalize orientation to match what macOS actually displays ---
+    # WezTerm renders RAW pixels and ignores the EXIF Orientation tag, so an
+    # image rotated in Preview shows up sideways. qlmanage uses the same
+    # QuickLook pipeline as Finder/Preview, so its thumbnail is oriented
+    # exactly the way you see it in macOS (it bakes the rotation into pixels).
+    cache_dir="${TMPDIR:-/tmp}/wallpaper-preview"
+    mkdir -p "$cache_dir"
+    key="$(printf '%s' "$img" | shasum | cut -d' ' -f1)"
+    mtime="$(stat -f %m "$img" 2>/dev/null || echo 0)"   # mtime invalidates on re-rotate
+    norm="$cache_dir/${key}-${mtime}.png"
+
+    if [[ ! -f "$norm" ]]; then
+        if qlmanage -t -s 2000 -o "$cache_dir" "$img" >/dev/null 2>&1 \
+           && [[ -f "$cache_dir/$(basename "$img").png" ]]; then
+            mv -f "$cache_dir/$(basename "$img").png" "$norm"
+        else
+            norm="$img"   # fallback: QuickLook failed, use original
+        fi
+    fi
+
+    python3 - "$norm" "$cols" "$lines" "${TMUX:-}" <<'PYEOF'
+import sys, base64, subprocess, re
+
+img_path = sys.argv[1]
+cols     = int(sys.argv[2])
+lines    = int(sys.argv[3])
+in_tmux  = bool(sys.argv[4])
+
+# dims now come from the ORIENTED image, so the fit calc is correct too
+img_w = img_h = None
+try:
+    out = subprocess.run(
+        ["sips", "-g", "pixelWidth", "-g", "pixelHeight", img_path],
+        capture_output=True, text=True, timeout=5,
+    ).stdout
+    mw = re.search(r"pixelWidth:\s*(\d+)", out)
+    mh = re.search(r"pixelHeight:\s*(\d+)", out)
+    if mw and mh:
+        img_w, img_h = int(mw.group(1)), int(mh.group(1))
+except Exception:
+    pass
+
+CELL_RATIO = 2.0
+size_attr = f";width={cols};height={lines}"
+if img_w and img_h:
+    box_ratio = cols / (lines * CELL_RATIO)
+    img_ratio = img_w / img_h
+    size_attr = f";width={cols}" if img_ratio >= box_ratio else f";height={lines}"
+
+with open(img_path, "rb") as f:
+    data = base64.b64encode(f.read()).decode()
+
+seq = (
+    "\033]1337;File=inline=1" + size_attr +
+    ";preserveAspectRatio=1;doNotMoveCursor=1:" + data + "\a"
+)
+if in_tmux:
+    seq = "\033Ptmux;" + seq.replace("\033", "\033\033") + "\033\\"
+
+sys.stdout.write(seq)
+sys.stdout.flush()
+PYEOF
+    exit 0
+fi
+
+# ----------------------------------------------------------------------
+# Dependency checks
+# ----------------------------------------------------------------------
+for dep in fzf sqlite3 osascript; do
+    command -v "$dep" >/dev/null 2>&1 || { echo "Missing dependency: $dep" >&2; exit 1; }
+done
+[[ -n "$WEZTERM_BIN" ]] || { echo "wezterm CLI not found" >&2; exit 1; }
+[[ -d "$WALLPAPER_DIR" ]] || { echo "No such directory: $WALLPAPER_DIR" >&2; exit 1; }
+
+# Absolute path to this script so fzf's --preview can call it back
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+
+# ----------------------------------------------------------------------
+# Pick a wallpaper
+# ----------------------------------------------------------------------
+cd "$WALLPAPER_DIR"
+
+selected="$(
+    find . -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
+           -o -iname '*.heic' -o -iname '*.gif' -o -iname '*.webp' \) \
+        | sed 's|^\./||' \
+        | sort \
+        | fzf --prompt='wallpaper > ' \
+              --cycle \
+              --preview="WEZTERM_BIN=$(printf '%q' "$WEZTERM_BIN") $(printf '%q' "$SELF") --preview $(printf '%q' "$WALLPAPER_DIR")/{}" \
+              --preview-window='right:55%'
+)" || true
+
+[[ -z "$selected" ]] && { echo "Nothing selected."; exit 0; }
+
+abs="$WALLPAPER_DIR/$selected"
+[[ -f "$abs" ]] || { echo "File vanished: $abs" >&2; exit 1; }
+
+# ----------------------------------------------------------------------
+# Apply to every Space (SIP-safe, no DB edits)
+#   Walk across Spaces with the default Ctrl+Left / Ctrl+Right shortcuts
+#   and set the visible desktop on each. Override with SPACES=N if needed.
+# ----------------------------------------------------------------------
+
+detect_spaces() {
+    # yabai queries work without the scripting addition (SIP-safe)
+    if command -v yabai >/dev/null 2>&1; then
+        local n
+        n="$(yabai -m query --spaces 2>/dev/null | grep -c '"index"')"
+        [[ "$n" =~ ^[0-9]+$ ]] && (( n > 0 )) && { echo "$n"; return; }
+    fi
+    # Fallback: read live prefs through cfprefsd, not the stale file
+    defaults read com.apple.spaces 2>/dev/null | grep -c "ManagedSpaceID"
+}
+
+SPACES="${SPACES:-$(detect_spaces)}"
+[[ "$SPACES" =~ ^[0-9]+$ ]] && (( SPACES >= 1 )) || SPACES=1
+
+set_visible_desktop() {
+    osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$abs\"" 2>/dev/null || true
+}
+space_left()  { osascript -e 'tell application "System Events" to key code 123 using control down'; }
+space_right() { osascript -e 'tell application "System Events" to key code 124 using control down'; }
+
+# Go to the leftmost Space (pressing Left at the edge is a harmless no-op)
+for (( i = 0; i < SPACES; i++ )); do space_left; sleep 0.35; done
+
+# Walk right, setting each Space as we land on it
+for (( i = 0; i < SPACES; i++ )); do
+    set_visible_desktop
+    sleep 0.2
+    if (( i < SPACES - 1 )); then space_right; sleep 0.5; fi
+done
+
+echo "✓ Wallpaper set on $SPACES space(s): $abs"
