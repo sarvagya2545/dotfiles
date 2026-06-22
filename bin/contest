@@ -6,14 +6,14 @@ DEFAULT_CONTEST_HOME="$HOME/.CP"
 
 # this is the default coding enviroment which gets replicated for each problem in the contest
 # this folder contains code.cpp, input.txt, output.txt, debug.txt, preprocessed header files, etc.
-DEFAULT_CONTEST_FILES="$HOME/.CP/contest-files"
+DEFAULT_CONTEST_FILES="$HOME/.CP/contest_files"
 
 # all the folders where we are going to create the contest files 
 sites=("AtCoder" "CodeChef" "Codeforces" "Leetcode")
 
-go_to_contest_home_folder() {
+get_contest_home_folder() {
     # for changing this directory, set $CONTEST_HOME variable
-    if [ -z "$CONTEST_HOME" ]; then
+    if [[ -z "${CONTEST_HOME:-}" ]]; then
         CONTEST_HOME="$DEFAULT_CONTEST_HOME"
     fi
 
@@ -22,11 +22,16 @@ go_to_contest_home_folder() {
         exit 1
     fi
 
+    echo "$CONTEST_HOME"
+}
+
+go_to_contest_home_folder() {
+    CONTEST_HOME=$(get_contest_home_folder) || exit 1
     cd "$CONTEST_HOME" || exit 1
 }
 
 get_contest_files_path() {
-    if [ -z "$CONTEST_FILES" ]; then
+    if [[ -z "${CONTEST_FILES:-}" ]]; then
         CONTEST_FILES="$DEFAULT_CONTEST_FILES"
     fi
 
@@ -84,12 +89,12 @@ read_contest_file_count() {
 get_contest_folder_problem_count() {
     contest_path="$1"
     contest_name="$2"
-    ls -ld "$SITE/$CONTEST_NAME/"* | wc -l
+    ls -ld "$contest_path/$contest_name/"* | wc -l
 }
 
 create_contest_files() {
     # $1 -> $SITE, $2 -> $CONTEST_NAME, $3 -> $FILE_COUNT
-    CONTEST_FILES_PATH=$(get_contest_files_path)
+    CONTEST_FILES_PATH=$(get_contest_files_path) || exit 1
 
     # loop from 1 to FILE_COUNT ($3)
     for (( a=1; a<="$3"; a++ ))
@@ -113,7 +118,13 @@ create_contest_tmux_session() {
 
         tmux new-window -t "$TMUX_SESSION_NAME":"$(( a + 1 ))" -n "$FILE_CHAR"
         tmux send-keys -t "$CURRENT_WINDOW" "export NVIM_CONTEST_MODE=1" Enter
-        tmux send-keys -t "$CURRENT_WINDOW" "cd $FILE_CHAR && nvim code.cpp -c 'rightbelow vsplit input.txt' -c 'rightbelow split output.txt' -c \"execute 'vertical resize ' . (&columns * 3 / 10)\" -c 'badd debug.txt' -c 'wincmd h'" Enter
+        tmux send-keys -t "$CURRENT_WINDOW" "cd $FILE_CHAR" Enter
+        tmux send-keys -t "$CURRENT_WINDOW" "nvim code.cpp \
+              -c 'rightbelow vsplit input.txt' \
+              -c 'rightbelow split output.txt' \
+              -c 'badd debug.txt' \
+              -c 'wincmd h' \
+              -c 'autocmd VimEnter * execute \"vertical resize \" . (&columns * 7 / 10)'" Enter
     done
 
     # delete the initial window
@@ -121,6 +132,7 @@ create_contest_tmux_session() {
 }
 
 get_contest_sessions() {
+    CONTEST_HOME=$(get_contest_home_folder)
     for site in "${sites[@]}"; do
         path="$CONTEST_HOME/$site"
         [[ -d "$path" ]] && find "$path" -mindepth 1 -maxdepth 1 -type d -print | sed 's|.*/\([^/]*/[^/]*\)$|\1|'
@@ -201,7 +213,7 @@ if [[ $resume -eq 0 ]]; then
     create_contest_tmux_session "$TMUX_SESSION_NAME" "$FILE_COUNT"
 else
     # this opens a fzf menu with all the contest folders
-    selected=$(get_contest_sessions | fzf)
+    selected=$(get_contest_sessions | fzf) || true
 
     if [[ -z $selected ]]; then
         exit 0
@@ -226,7 +238,7 @@ fi
 # select the 1st window for the contest
 tmux select-window -t "$TMUX_SESSION_NAME":1
 
-if [[ ! -z $TMUX ]]; then
+if [[ -n "${TMUX:-}" ]]; then
     tmux switch-client -t "$TMUX_SESSION_NAME"
 else
     tmux attach -t "$TMUX_SESSION_NAME"

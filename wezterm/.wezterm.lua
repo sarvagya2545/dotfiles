@@ -2,7 +2,10 @@ local wezterm = require("wezterm")
 
 local config = wezterm.config_builder()
 
-config.term = "xterm-256color"
+config.term = "xterm-kitty"
+config.enable_kitty_graphics = true
+config.default_cursor_style = "SteadyBlock"
+config.cursor_blink_rate = 0
 
 config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 17
@@ -38,5 +41,6 @@ config.keys = {
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 }
+config.window_background_opacity = 0.9
 
 return config

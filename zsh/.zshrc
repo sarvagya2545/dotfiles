@@ -126,6 +126,8 @@ export PATH=/Users/sarvagya_sharma/.duckdb/cli/latest:$PATH
 export PATH="$PATH:/Applications/WezTerm.app/Contents/MacOS"
 export PATH="/usr/local/mysql/bin:$PATH"
 export PATH="$HOME/dotfiles/bin:$PATH"
+export PATH="/opt/local/lib/ImageMagick7/bin:$PATH"
+export PKG_CONFIG_PATH="/opt/local/lib/ImageMagick7/lib/pkgconfig:$PKG_CONFIG_PATH"
 
 # history setup
 HISTFILE=$HOME/.zhistory
@@ -141,16 +143,54 @@ export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
 eval "$(starship init zsh)"
 
 export NVM_DIR="$HOME/.nvm"
-nvm() {
-  unset -f nvm node npm npx
-  [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-  nvm "$@"
-}
+# Load nvm only if it hasn't been loaded yet
+if [ -z "$NVM_LOADED" ]; then
+    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+    export NVM_LOADED=1
+fi
+# nvm() {
+#   unset -f nvm node npm npx
+#   [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+#   nvm "$@"
+# }
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 bindkey -s ^f "tmux-sessionizer\n"
 
 #################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
-export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
-export CONTEST_FILES="$CONTEST_HOME/contest_files/"
+# export CONTEST_HOME="$HOME/Desktop/Comp_Programming"
+# export CONTEST_FILES="$CONTEST_HOME/contest_files/"
 #################### FOR COMPETITIVE PROGRAMMING ENVIRONMENT ####################
+
+export PATH="$HOME/.local/bin:$PATH"
+
+# hide and show desktop apps easily
+alias hide_desktop="defaults write com.apple.finder CreateDesktop false; killall Finder"
+alias show_desktop="defaults write com.apple.finder CreateDesktop true; killall Finder"
+
+###################### INSTALL XTERM KITTY TERMINFO #############################
+install_xterm_kitty_terminfo() {
+  # Attempt to get terminfo for xterm-kitty
+  if ! infocmp xterm-kitty &>/dev/null; then
+    echo "xterm-kitty terminfo not found. Installing..."
+    # Create a temp file
+    tempfile=$(mktemp)
+    # Download the kitty.terminfo file
+    # https://github.com/kovidgoyal/kitty/blob/master/terminfo/kitty.terminfo
+    if curl -o "$tempfile" https://raw.githubusercontent.com/kovidgoyal/kitty/master/terminfo/kitty.terminfo; then
+      echo "Downloaded kitty.terminfo successfully."
+      # Compile and install the terminfo entry for my current user
+      if tic -x -o ~/.terminfo "$tempfile"; then
+        echo "xterm-kitty terminfo installed successfully."
+      else
+        echo "Failed to compile and install xterm-kitty terminfo."
+      fi
+    else
+      echo "Failed to download kitty.terminfo."
+    fi
+    # Remove the temporary file
+    rm "$tempfile"
+  fi
+}
+install_xterm_kitty_terminfo
+###################### INSTALL XTERM KITTY TERMINFO #############################
