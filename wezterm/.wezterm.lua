@@ -6,6 +6,8 @@ config.term = "xterm-kitty"
 config.enable_kitty_graphics = true
 config.default_cursor_style = "SteadyBlock"
 config.cursor_blink_rate = 0
+-- https://wezterm.org/config/lua/config/enable_csi_u_key_encoding.html
+config.enable_csi_u_key_encoding = true
 
 config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 17
