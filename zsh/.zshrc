@@ -194,3 +194,23 @@ install_xterm_kitty_terminfo() {
 }
 install_xterm_kitty_terminfo
 ###################### INSTALL XTERM KITTY TERMINFO #############################
+
+###################### YT-DLP ######################
+
+# Use ytdlaudio command to download audio with metadata and thumbnail
+yta() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: yta <URL>"
+    fi
+
+    yt-dlp \
+        -f ba \
+        --extract-audio \
+        --audio-format m4a \
+        --embed-metadata \
+        --embed-thumbnail \
+        -P "~/songs/" \
+        "$@"
+}
+
+###################### YT-DLP ######################
