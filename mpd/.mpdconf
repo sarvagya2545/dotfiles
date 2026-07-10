@@ -1,0 +1,28 @@
+music_directory     "~/Music/my_songs"
+playlist_directory  "~/.local/share/mpd/playlists"
+db_file             "~/.local/share/mpd/database"
+log_file            "~/.local/share/mpd/log"
+pid_file            "~/.local/share/mpd/pid"
+state_file          "~/.local/share/mpd/state"
+
+auto_update         "yes"
+restore_paused      "yes"
+
+bind_to_address     "127.0.0.1"
+port                "6600"
+
+audio_output {
+    type        "osx"
+    name        "CoreAudio"
+    mixer_type  "software"
+}
+
+audio_output {
+    type            "fifo"
+    name            "viz"
+    path            "/tmp/mpd.fifo"
+    format          "44100:16:2"
+    buffer_time     "100000"
+}
+
+# vim: set filetype=conf :
