@@ -148,6 +148,7 @@ export PATH="$HOME/.local/bin:$PATH"
 # hide and show desktop apps easily
 alias hide_desktop="defaults write com.apple.finder CreateDesktop false; killall Finder"
 alias show_desktop="defaults write com.apple.finder CreateDesktop true; killall Finder"
+alias toggle_desktop='defaults write com.apple.finder CreateDesktop -bool $(defaults read com.apple.finder CreateDesktop 2>/dev/null | grep -qx 1 && echo false || echo true); killall Finder'
 
 ###################### INSTALL XTERM KITTY TERMINFO #############################
 install_xterm_kitty_terminfo() {

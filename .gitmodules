@@ -7,3 +7,6 @@
 [submodule "contest_env/.CP/contest_templates"]
 	path = contest_env/.CP/contest_templates
 	url = https://github.com/sarvagya2545/contest_templates
+[submodule "karabiner/.config/karabiner"]
+	path = karabiner/.config/karabiner
+	url = git@github.com:sarvagya2545/karabiner.git
