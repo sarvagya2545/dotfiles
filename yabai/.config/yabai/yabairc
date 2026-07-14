@@ -4,7 +4,7 @@ yabai -m config layout stack
 yabai -m config window-placement second_child
 
 # padding
-yabai -m config top_padding 0
+yabai -m config top_padding 45 ## Padding for sketchybar
 yabai -m config bottom_padding 0
 yabai -m config left_padding 0
 yabai -m config right_padding 0
