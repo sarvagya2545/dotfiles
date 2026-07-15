@@ -4,7 +4,7 @@ yabai -m config layout stack
 yabai -m config window-placement second_child
 
 # padding
-yabai -m config top_padding 45 ## Padding for sketchybar
+yabai -m config top_padding 0
 yabai -m config bottom_padding 0
 yabai -m config left_padding 0
 yabai -m config right_padding 0
@@ -55,4 +55,4 @@ yabai -m rule --add app="^Finder$" manage=off
 # yabai -m signal --add event=window_deminimized action="~/.config/yabai/restack.sh"
 
 # This is used only with bars
-# yabai -m config external_bar all:40:0
+yabai -m config external_bar all:37:0
