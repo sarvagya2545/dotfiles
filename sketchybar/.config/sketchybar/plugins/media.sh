@@ -17,7 +17,9 @@ elif [ "$SENDER" = "media_change" ]; then
   # system event (browser, Music.app, ...)
   SYS_STATE="$(echo "$INFO" | $JQ -r '.state')"
   if [ "$SYS_STATE" = "playing" ]; then
-    MEDIA="$(echo "$INFO" | $JQ -r '.title + " - " + .artist')"
+    TITLE="$(echo "$INFO" | $JQ -r '.title')"
+    ARTIST="$(echo "$INFO" | $JQ -r '.artist')"
+    [ -n "$ARTIST" ] && MEDIA="$TITLE - $ARTIST" || MEDIA="$TITLE"
     echo "system" > "$SRC_FILE"
     sketchybar --set "$NAME" label="$MEDIA" drawing=on
   else
