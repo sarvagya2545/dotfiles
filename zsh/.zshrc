@@ -196,3 +196,8 @@ yta() {
 }
 
 ###################### YT-DLP ######################
+
+### fastfetch
+if [ -z "$TMUX" ]; then
+    fastfetch
+fi
