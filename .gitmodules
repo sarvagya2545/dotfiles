@@ -1,9 +1,10 @@
 [submodule "nvim/.config/nvim"]
 	path = nvim/.config/nvim
-	url = https://github.com/sarvagya2545/nvim-config
+	url = ../nvim-config.git
 [submodule "contest_env/.CP/contest_files"]
 	path = contest_env/.CP/contest_files
-	url = https://github.com/sarvagya2545/contest_files
+	url = ../contest_files.git
 [submodule "contest_env/.CP/contest_templates"]
 	path = contest_env/.CP/contest_templates
-	url = https://github.com/sarvagya2545/contest_templates
+	url = ../contest_templates.git
+	 
