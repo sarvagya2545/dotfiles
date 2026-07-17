@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source "$CONFIG_DIR/colors.sh"
+source "$CONFIG_DIR/icons.sh"
 
 # This is a demo config to showcase some of the most important commands.
 # It is meant to be changed and configured, as it is intentionally kept sparse.
@@ -28,7 +29,7 @@ sketchybar --bar position=top height=37 blur_radius=30 color=$BAR_COLOR
 default=(
     padding_left=5
     padding_right=5
-    icon.font="JetBrainsMono Nerd Font:Bold:14.0"
+    icon.font="SF Pro:Bold:14.0"
     label.font="JetBrainsMono Nerd Font:Bold:14.0"
     icon.color=$WHITE
     label.color=$WHITE
@@ -49,10 +50,10 @@ source $ITEM_DIR/media.sh
 # -- Right side items
 source $ITEM_DIR/calendar.sh
 
-source $ITEM_DIR/battery.sh
-source $ITEM_DIR/volume.sh
-source $ITEM_DIR/wifi.sh
 source $ITEM_DIR/bluetooth.sh
+source $ITEM_DIR/volume.sh
+source $ITEM_DIR/battery.sh
+source $ITEM_DIR/wifi.sh
 
 source $ITEM_DIR/cpu.sh
 source $ITEM_DIR/ram.sh
