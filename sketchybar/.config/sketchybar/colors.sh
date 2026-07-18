@@ -42,3 +42,7 @@ export ACCENT_COLOR=0xff2cf9ed
 # export BAR_COLOR=0xff2d2b02
 # export ITEM_BG_COLOR=0xff8e7e0a
 # export ACCENT_COLOR=0xfff7fc17
+
+# Translucent version of the active scheme's accent, for dimmed/
+# inactive indicators. Derived, so it follows whichever scheme is on.
+export INACTIVE_COLOR="0x44${ACCENT_COLOR#0xff}"

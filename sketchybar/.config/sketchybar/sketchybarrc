@@ -59,8 +59,7 @@ source $ITEM_DIR/cpu.sh
 source $ITEM_DIR/ram.sh
 
 
-# sketchybar --add bracket system_group battery volume wifi bluetooth \
-sketchybar --add bracket system_group battery volume wifi bluetooth \
+sketchybar --add bracket system_group battery volume wifi.alias bluetooth.alias \
            --set system_group \
                  background.color=$ITEM_BG_COLOR \
                  background.height=24 \
