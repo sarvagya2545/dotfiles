@@ -94,9 +94,12 @@ source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Less editor commands config
 # export LESSOPEN="| $(brew --prefix source-highlight)/bin/src-hilite-lesspipe.sh %s"
-export LESSOPEN="| /usr/local/opt/source-highlight/bin/src-hilite-lesspipe.sh %s"
-export LESS=' -R --use-color -N -J --line-num-width 5 --incsearch'
+export LESS=' -R -N -J --line-num-width 5 --incsearch'
 export SOURCE_HIGHLIGHT_STYLE=esc
+
+export MANPAGER='sh -c "col -bx | bat -l cman -p"' # custom syntax highlighting for man pages
+export MANROFFOPT="-c"
+export BAT_THEME='CoolNight' # custom theme for man pages
 
 export EDITOR=nvim
 
