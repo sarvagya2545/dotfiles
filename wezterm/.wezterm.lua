@@ -13,7 +13,7 @@ config.font = wezterm.font_with_fallback({
 	"JetBrainsMono Nerd Font",
 	"SF Pro",
 })
-config.font_size = 17
+config.font_size = 16
 
 config.enable_tab_bar = false
 config.window_decorations = "RESIZE"
@@ -46,6 +46,6 @@ config.keys = {
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 }
-config.window_background_opacity = 0.9
+config.window_background_opacity = 0.90
 
 return config
