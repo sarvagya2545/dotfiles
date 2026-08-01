@@ -90,7 +90,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # export MANPATH="/usr/local/man:$MANPATH"
 
 alias air='/Users/sarvagya_sharma/go/bin/air'
-source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# source /usr/local/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Less editor commands config
 # export LESSOPEN="| $(brew --prefix source-highlight)/bin/src-hilite-lesspipe.sh %s"
@@ -137,7 +137,12 @@ fi
 #   [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 #   nvm "$@"
 # }
-export PATH="$PATH:$(go env GOPATH)/bin"
+# export PATH="$PATH:$(go env GOPATH)/bin"
+
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
 
 bindkey -s ^f "tmux-sessionizer\n"
 
@@ -204,3 +209,4 @@ yta() {
 if [ -z "$TMUX" ]; then
     fastfetch
 fi
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
