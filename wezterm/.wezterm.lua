@@ -46,6 +46,6 @@ config.keys = {
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 }
-config.window_background_opacity = 0.90
+config.window_background_opacity = 0.95
 
 return config
