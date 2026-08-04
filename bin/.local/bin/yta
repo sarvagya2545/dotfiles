@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# yta — download audio with metadata and thumbnail embedded.
+# Usage: yta <URL>...
+
+set -euo pipefail
+
+if (( $# == 0 )); then
+    echo "Usage: yta <URL>..." >&2
+    exit 1
+fi
+
+if ! command -v yt-dlp >/dev/null 2>&1; then
+    echo "yta: yt-dlp not found" >&2
+    exit 1
+fi
+
+yt-dlp \
+    -f ba \
+    --extract-audio \
+    --audio-format m4a \
+    --embed-metadata \
+    --embed-thumbnail \
+    -P "$HOME/songs" \
+    "$@"
