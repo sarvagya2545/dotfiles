@@ -55,4 +55,4 @@ yabai -m rule --add app="^Finder$" manage=off
 # yabai -m signal --add event=window_deminimized action="~/.config/yabai/restack.sh"
 
 # This is used only with bars
-# yabai -m config external_bar all:40:0
+yabai -m config external_bar all:37:0

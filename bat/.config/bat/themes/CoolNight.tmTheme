@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>CoolNight</string>
+	<key>settings</key>
+	<array>
+		<dict>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#011423</string>
+				<key>foreground</key>
+				<string>#CBE0F0</string>
+				<key>caret</key>
+				<string>#47FF9C</string>
+				<key>lineHighlight</key>
+				<string>#03325980</string>
+				<key>selection</key>
+				<string>#033259</string>
+				<key>selectionForeground</key>
+				<string>#CBE0F0</string>
+				<key>invisibles</key>
+				<string>#214969</string>
+				<key>gutter</key>
+				<string>#011423</string>
+				<key>gutterForeground</key>
+				<string>#214969</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Comment</string>
+			<key>scope</key>
+			<string>comment, punctuation.definition.comment</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>italic</string>
+				<key>foreground</key>
+				<string>#5D89AC</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>String</string>
+			<key>scope</key>
+			<string>string, string.quoted, string.template, punctuation.definition.string</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#FFE073</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Number / Constant</string>
+			<key>scope</key>
+			<string>constant.numeric, constant.language, constant.character, constant.other</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#44FFB1</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Keyword / Storage</string>
+			<key>scope</key>
+			<string>keyword, storage.type, storage.modifier, keyword.control</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#A277FF</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Operator</string>
+			<key>scope</key>
+			<string>keyword.operator</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#24EAF7</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Function / Entity name</string>
+			<key>scope</key>
+			<string>entity.name.function, support.function, meta.function-call</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#0FC5ED</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Class / Type / Tag</string>
+			<key>scope</key>
+			<string>entity.name.class, entity.name.type, entity.name.tag, support.type, support.class</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#24EAF7</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Variable</string>
+			<key>scope</key>
+			<string>variable, variable.parameter, variable.other</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#CBE0F0</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Attribute / Entity name-tag</string>
+			<key>scope</key>
+			<string>entity.other.attribute-name</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#44FFB1</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Invalid / Error</string>
+			<key>scope</key>
+			<string>invalid, invalid.illegal</string>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>#E52E2E</string>
+				<key>foreground</key>
+				<string>#011423</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Markup Heading / Bold (man page options)</string>
+			<key>scope</key>
+			<string>markup.heading, markup.bold, entity.name.section</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#FFE073</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Markup Underline / Italic (man page args)</string>
+			<key>scope</key>
+			<string>markup.underline, markup.italic</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>underline</string>
+				<key>foreground</key>
+				<string>#0FC5ED</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Markup Link / URL</string>
+			<key>scope</key>
+			<string>markup.underline.link, string.other.link</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#24EAF7</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Diff Inserted</string>
+			<key>scope</key>
+			<string>markup.inserted</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#44FFB1</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Diff Deleted</string>
+			<key>scope</key>
+			<string>markup.deleted</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#E52E2E</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Punctuation</string>
+			<key>scope</key>
+			<string>punctuation</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#8FB4CE</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Title Line</string>
+			<key>scope</key>
+			<string>markup.heading.title.man, meta.preprocessor.man</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#FFE073</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Section Headings (NAME, SYNOPSIS, DESCRIPTION...)</string>
+			<key>scope</key>
+			<string>markup.heading.other.man, markup.heading.synopsis.man, markup.heading.commands.man, markup.heading.env.man</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold underline</string>
+				<key>foreground</key>
+				<string>#A277FF</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Command-line Options (-x, --flag)</string>
+			<key>scope</key>
+			<string>entity.name.command-line-option, entity.name.command-line-option.man</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#44FFB1</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Option Arguments / Parameters</string>
+			<key>scope</key>
+			<string>variable.parameter.man</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>underline</string>
+				<key>foreground</key>
+				<string>#0FC5ED</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Placeholder Brackets &lt;arg&gt;</string>
+			<key>scope</key>
+			<string>punctuation.definition.generic.begin.man, punctuation.definition.generic.end.man</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#24EAF7</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Function Calls</string>
+			<key>scope</key>
+			<string>entity.name.function.man</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#0FC5ED</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Env Vars / Constants</string>
+			<key>scope</key>
+			<string>constant.other.man, support.constant.environment-variable.man, punctuation.definition.variable.man</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#44FFB1</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Subcommand Names</string>
+			<key>scope</key>
+			<string>entity.name.command.man</string>
+			<key>settings</key>
+			<dict>
+				<key>fontStyle</key>
+				<string>bold</string>
+				<key>foreground</key>
+				<string>#24EAF7</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Man Page - Operators / Pipes / Brackets</string>
+			<key>scope</key>
+			<string>keyword.operator.man, keyword.operator.logical.man, punctuation.section.brackets.begin.man, punctuation.section.brackets.end.man, punctuation.separator.man</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#8FB4CE</string>
+			</dict>
+		</dict>
+	</array>
+	<key>uuid</key>
+	<string>7c8f2e10-3b4a-4d5e-9f6a-1b2c3d4e5f6a</string>
+</dict>
+</plist>

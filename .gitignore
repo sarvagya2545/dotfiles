@@ -8,3 +8,8 @@
 
 !/contest_env/.CP/contest_templates
 !/contest_env/.CP/contest_templates/*
+
+# zsh plugin files
+/zsh/.config/zsh/plugins/*
+# zsh history
+/zsh/.config/zsh/.zsh_history
