@@ -91,3 +91,5 @@ source "$ZDOTDIR/plugins.zsh"
 # Prompt/theme
 source "$ZDOTDIR/prompt.zsh"
 
+# Runtimes (like node, python)
+source "$ZDOTDIR/runtimes.zsh"
