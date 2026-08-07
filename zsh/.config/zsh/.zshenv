@@ -1,5 +1,5 @@
 # this stops the global rc files from running
-unsetopt GLOBAL_RCS
+# unsetopt GLOBAL_RCS
 
 # ---------- XDG Base directories ----------
 # Centralizes config/cache/data locations
