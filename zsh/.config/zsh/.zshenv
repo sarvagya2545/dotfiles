@@ -37,6 +37,8 @@ export PATH="/usr/local/opt/llvm@15/bin:$PATH"
 # Image magick
 export PATH="/opt/local/lib/ImageMagick7/bin:$PATH"
 export PKG_CONFIG_PATH="/opt/local/lib/ImageMagick7/lib/pkgconfig:$PKG_CONFIG_PATH"
+# brew
+export PATH="/usr/local/bin:$PATH"
 
 # ---------- Pager ---------- 
 # custom syntax highlighting for man pages
