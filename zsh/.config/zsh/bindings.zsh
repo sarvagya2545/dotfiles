@@ -20,4 +20,7 @@ function zvm_config() {
 zvm_after_init() {
     # tmux-sessionizer
     bindkey -s ^f "tmux-sessionizer\n"
+    
+    # fzf history for vim insert mode
+    bindkey -M viins '^R' fzf-history-widget
 }
