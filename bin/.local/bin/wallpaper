@@ -1,111 +1,177 @@
 #!/usr/bin/env bash
 #
-# wallpaper.sh — pick a wallpaper with fzf (image preview in WezTerm)
-#                and apply it to every Space currently present.
+# wallpaper.sh — pick a wallpaper with fzf, preview it, then apply it to
+#                every Space currently present.
+#
+# Two preview strategies:
+#   Outside tmux — chafa straight into fzf's preview pane.
+#   Inside tmux  — a real tmux pane beside fzf, repainted with
+#                  `tmux respawn-pane` on every selection change. tmux
+#                  decodes the sixel into that pane's own grid, which is
+#                  the one path verified to work. fzf never touches the
+#                  image bytes.
+#
+# Deps:  fzf (any version), chafa
 #
 # Usage:   ./wallpaper.sh
+#          ./wallpaper.sh --doctor
 #          WALLPAPER_DIR=~/Pictures/walls ./wallpaper.sh
 #
 set -euo pipefail
 
+SCRIPT_VERSION=11
+
 WALLPAPER_DIR="${WALLPAPER_DIR:-$HOME/Downloads/wallpapers}"
+PREVIEW_WIDTH="${PREVIEW_WIDTH:-55}"     # percent of the window
+THUMB_SIZE="${THUMB_SIZE:-1200}"
 
-# Resolve the wezterm CLI (not always on PATH when installed as a .app)
-WEZTERM_BIN="$(command -v wezterm || true)"
-if [[ -z "$WEZTERM_BIN" && -x /Applications/WezTerm.app/Contents/MacOS/wezterm ]]; then
-    WEZTERM_BIN="/Applications/WezTerm.app/Contents/MacOS/wezterm"
-fi
-export WEZTERM_BIN
+# Fixed path on purpose. $TMPDIR on macOS is a long per-user directory
+# under /var/folders, which is a bad place to go looking for a log.
+WALLPAPER_LOG="${WALLPAPER_LOG:-/tmp/wallpaper-debug.log}"
+
+# One format everywhere. WezTerm draws sixel whether or not tmux is in the
+# picture, so the inline preview and the tmux pane use the same command.
+# Set PREVIEW_FORMAT=iterm for sharper colour outside tmux; it is a full
+# PNG rather than sixel's limited palette, and a smaller payload.
+PREVIEW_FORMAT="${PREVIEW_FORMAT:-sixel}"
+
+
+chafa_render() {
+    # chafa_render FILE COLSxLINES
+    chafa -f "$PREVIEW_FORMAT" --passthrough none --exact-size on \
+          --animate off -s "$2" "$1"
+}
 
 # ----------------------------------------------------------------------
-# Preview mode: fzf calls this script back as `wallpaper.sh --preview FILE`
+# Orientation-correct thumbnails.
+# WezTerm renders raw pixels and ignores the EXIF Orientation tag.
+# qlmanage bakes the rotation in the way Finder shows it.
 # ----------------------------------------------------------------------
-
-if [[ "${1:-}" == "--preview" ]]; then
-    # Debounce: fzf kills this process when the selection changes. A short
-    # sleep means fast scrolling cancels the preview before it draws anything,
-    # so only the image you settle on actually renders -> no flicker.
-    sleep 0.05
-
-    img="$2"
-    cols="${FZF_PREVIEW_COLUMNS:-80}"
-    lines="${FZF_PREVIEW_LINES:-25}"
-
-    # --- Normalize orientation to match what macOS actually displays ---
-    # WezTerm renders RAW pixels and ignores the EXIF Orientation tag, so an
-    # image rotated in Preview shows up sideways. qlmanage uses the same
-    # QuickLook pipeline as Finder/Preview, so its thumbnail is oriented
-    # exactly the way you see it in macOS (it bakes the rotation into pixels).
-    cache_dir="${TMPDIR:-/tmp}/wallpaper-preview"
+normalize() {
+    local img="$1"
+    local cache_dir="${TMPDIR:-/tmp}/wallpaper-preview"
     mkdir -p "$cache_dir"
+    local key mtime norm
     key="$(printf '%s' "$img" | shasum | cut -d' ' -f1)"
-    mtime="$(stat -f %m "$img" 2>/dev/null || echo 0)"   # mtime invalidates on re-rotate
-    norm="$cache_dir/${key}-${mtime}.png"
-
+    mtime="$(stat -f %m "$img" 2>/dev/null || echo 0)"
+    norm="$cache_dir/${key}-${mtime}-${THUMB_SIZE}.png"
     if [[ ! -f "$norm" ]]; then
-        if qlmanage -t -s 2000 -o "$cache_dir" "$img" >/dev/null 2>&1 \
+        if qlmanage -t -s "$THUMB_SIZE" -o "$cache_dir" "$img" >/dev/null 2>&1 \
            && [[ -f "$cache_dir/$(basename "$img").png" ]]; then
             mv -f "$cache_dir/$(basename "$img").png" "$norm"
         else
-            norm="$img"   # fallback: QuickLook failed, use original
+            norm="$img"
         fi
     fi
+    printf '%s\n' "$norm"
+}
 
-    python3 - "$norm" "$cols" "$lines" "${TMUX:-}" <<'PYEOF'
-import sys, base64, subprocess, re
+# ----------------------------------------------------------------------
+# Callback: repaint the dedicated tmux preview pane.
+#   wallpaper.sh --pane-preview %PANE_ID FILE
+# ----------------------------------------------------------------------
+if [[ "${1:-}" == "--pane-preview" ]]; then
+    pane="$2"; img="$3"
 
-img_path = sys.argv[1]
-cols     = int(sys.argv[2])
-lines    = int(sys.argv[3])
-in_tmux  = bool(sys.argv[4])
+    # Debug: WALLPAPER_DEBUG=1 sends every callback's trace here. Errors in
+    # an execute-silent binding are invisible otherwise, which is exactly
+    # how the previous version failed without a word.
+    if [[ -n "${WALLPAPER_DEBUG:-}" ]]; then
+        exec 2>>"$WALLPAPER_LOG"
+        echo "--- pane-preview $(date '+%H:%M:%S') pane=$pane img=$img" >&2
+        set -x
+    fi
 
-# dims now come from the ORIENTED image, so the fit calc is correct too
-img_w = img_h = None
-try:
-    out = subprocess.run(
-        ["sips", "-g", "pixelWidth", "-g", "pixelHeight", img_path],
-        capture_output=True, text=True, timeout=5,
-    ).stdout
-    mw = re.search(r"pixelWidth:\s*(\d+)", out)
-    mh = re.search(r"pixelHeight:\s*(\d+)", out)
-    if mw and mh:
-        img_w, img_h = int(mw.group(1)), int(mh.group(1))
-except Exception:
-    pass
+    # Pane geometry. `display -p -t` accepts a pane id; this doubles as the
+    # liveness check, since it fails if the pane is gone.
+    if ! geo="$(tmux display -p -t "$pane" '#{pane_width} #{pane_height}' 2>/dev/null)"; then
+        exit 0
+    fi
+    read -r w h <<< "$geo"
+    [[ "$w" =~ ^[0-9]+$ && "$h" =~ ^[0-9]+$ ]] || exit 0
+    (( h > 1 )) && h=$(( h - 1 ))
 
-CELL_RATIO = 2.0
-size_attr = f";width={cols};height={lines}"
-if img_w and img_h:
-    box_ratio = cols / (lines * CELL_RATIO)
-    img_ratio = img_w / img_h
-    size_attr = f";width={cols}" if img_ratio >= box_ratio else f";height={lines}"
+    # Absolute path: the preview pane has its own working directory, so a
+    # relative name from fzf would not resolve over there.
+    case "$img" in
+        /*) : ;;
+        *)  img="$WALLPAPER_DIR/$img" ;;
+    esac
+    norm="$(normalize "$img")"
+    case "$norm" in
+        /*) : ;;
+        *)  norm="$PWD/$norm" ;;
+    esac
 
-with open(img_path, "rb") as f:
-    data = base64.b64encode(f.read()).decode()
+    # The trailing sleep keeps the pane alive after chafa finishes, so the
+    # pane (and the image in its grid) stays put until the next repaint.
+    tmux respawn-pane -k -t "$pane" \
+        "chafa -f $PREVIEW_FORMAT --passthrough none --exact-size on --animate off -s ${w}x${h} $(printf '%q' "$norm"); exec sleep 86400"
 
-seq = (
-    "\033]1337;File=inline=1" + size_attr +
-    ";preserveAspectRatio=1;doNotMoveCursor=1:" + data + "\a"
-)
-if in_tmux:
-    seq = "\033Ptmux;" + seq.replace("\033", "\033\033") + "\033\\"
+    # Caption on stdout. When this runs as fzf's --preview command, fzf
+    # shows this text; the picture itself lives in the pane above.
+    dims="$(sips -g pixelWidth -g pixelHeight "$img" 2>/dev/null \
+            | awk '/pixelWidth/{w=$2} /pixelHeight/{h=$2} END{if (w) print w"x"h}')"
+    bytes="$(du -h "$img" 2>/dev/null | cut -f1 | tr -d ' ')"
+    printf '%s\n' "$(basename "$img")"
+    [[ -n "$dims" || -n "$bytes" ]] && printf '%s  %s\n' "${dims:-?}" "${bytes:-?}"
+    exit 0
+fi
 
-sys.stdout.write(seq)
-sys.stdout.flush()
-PYEOF
+# ----------------------------------------------------------------------
+# Callback: inline preview for the no-tmux case.
+# ----------------------------------------------------------------------
+if [[ "${1:-}" == "--preview" ]]; then
+    norm="$(normalize "$2")"
+    chafa_render "$norm" "${FZF_PREVIEW_COLUMNS:-80}x${FZF_PREVIEW_LINES:-25}"
+    exit 0
+fi
+
+# ----------------------------------------------------------------------
+# Doctor
+# ----------------------------------------------------------------------
+if [[ "${1:-}" == "--doctor" ]]; then
+    echo "script version  : $SCRIPT_VERSION  ($0)"
+    echo "TERM            : ${TERM:-<unset>}"
+    echo "Inside tmux     : $([[ -n "${TMUX:-}" ]] && echo yes || echo no)"
+    echo "fzf             : $(fzf --version 2>/dev/null || echo MISSING)"
+    if printf 'x\n' | fzf --filter=x --bind 'focus:execute-silent(true)' >/dev/null 2>&1; then
+        echo "fzf focus event : supported"
+    else
+        echo "fzf focus event : NOT supported (needs fzf 0.36+)"
+    fi
+    echo "preview format  : $PREVIEW_FORMAT"
+    echo "debug log path  : $WALLPAPER_LOG"
+    echo "chafa           : $(chafa --version 2>/dev/null | head -1 || echo MISSING)"
+    if [[ -n "${TMUX:-}" ]]; then
+        echo "tmux version    : $(tmux -V)"
+        echo "client features : $(tmux display -p '#{client_termfeatures}' 2>/dev/null || echo '<unknown>')"
+        ibs="$(tmux show -gv input-buffer-size 2>/dev/null || echo 0)"
+        echo "input-buffer-size: $ibs"
+        if [[ "$ibs" =~ ^[0-9]+$ ]] && (( ibs < 4194304 )); then
+            echo "  ^ too small. A sixel image arrives as one DCS sequence, and"
+            echo "    tmux silently discards any that exceed this buffer. Larger"
+            echo "    images will simply not appear. Fix with:"
+            echo "      tmux set -g input-buffer-size 16777216"
+            echo "    and add the same line to your tmux.conf."
+        fi
+        echo
+        echo "Preview strategy: dedicated tmux pane (respawn-pane + chafa)"
+    else
+        echo
+        echo "Preview strategy: inline chafa in fzf's preview pane"
+    fi
     exit 0
 fi
 
 # ----------------------------------------------------------------------
 # Dependency checks
 # ----------------------------------------------------------------------
-for dep in fzf sqlite3 osascript; do
+for dep in fzf chafa qlmanage osascript; do
     command -v "$dep" >/dev/null 2>&1 || { echo "Missing dependency: $dep" >&2; exit 1; }
 done
-[[ -n "$WEZTERM_BIN" ]] || { echo "wezterm CLI not found" >&2; exit 1; }
 [[ -d "$WALLPAPER_DIR" ]] || { echo "No such directory: $WALLPAPER_DIR" >&2; exit 1; }
 
-# Absolute path to this script so fzf's --preview can call it back
 SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
 # ----------------------------------------------------------------------
@@ -113,17 +179,49 @@ SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]
 # ----------------------------------------------------------------------
 cd "$WALLPAPER_DIR"
 
-selected="$(
+list_images() {
     find . -type f \
         \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \
            -o -iname '*.heic' -o -iname '*.gif' -o -iname '*.webp' \) \
-        | sed 's|^\./||' \
-        | sort \
-        | fzf --prompt='wallpaper > ' \
-              --cycle \
-              --preview="WEZTERM_BIN=$(printf '%q' "$WEZTERM_BIN") $(printf '%q' "$SELF") --preview $(printf '%q' "$WALLPAPER_DIR")/{}" \
-              --preview-window='right:55%'
-)" || true
+        | sed 's|^\./||' | sort
+}
+
+PREVIEW_PANE=""
+cleanup_pane() {
+    [[ -n "$PREVIEW_PANE" ]] && tmux kill-pane -t "$PREVIEW_PANE" 2>/dev/null || true
+    PREVIEW_PANE=""
+}
+trap cleanup_pane EXIT
+
+if [[ -n "${TMUX:-}" ]]; then
+    # -d keeps focus on the fzf pane; the new pane just sits there and waits.
+    PREVIEW_PANE="$(tmux split-window -h -d -l "${PREVIEW_WIDTH}%" \
+                        -P -F '#{pane_id}' "sleep 86400")"
+    # fzf's stderr is captured too. A binding fzf does not understand makes
+    # it exit immediately with a message that would otherwise scroll past.
+    # --preview drives the repaint. Every fzf version runs the preview
+    # command on selection change, so this needs no modern event bindings.
+    fzf_err="$(mktemp)"
+    selected="$(
+        list_images | fzf --prompt='wallpaper > ' --cycle \
+            --preview="$(printf '%q' "$SELF") --pane-preview $PREVIEW_PANE {}" \
+            --preview-window='down:2:noborder' \
+            2>"$fzf_err"
+    )" || true
+    if [[ -s "$fzf_err" ]]; then
+        echo "fzf reported:" >&2
+        cat "$fzf_err" >&2
+        [[ -n "${WALLPAPER_DEBUG:-}" ]] && cat "$fzf_err" >>"$WALLPAPER_LOG"
+    fi
+    rm -f "$fzf_err"
+    cleanup_pane
+else
+    selected="$(
+        list_images | fzf --prompt='wallpaper > ' --cycle \
+            --preview="$(printf '%q' "$SELF") --preview $(printf '%q' "$WALLPAPER_DIR")/{}" \
+            --preview-window="right:${PREVIEW_WIDTH}%"
+    )" || true
+fi
 
 [[ -z "$selected" ]] && { echo "Nothing selected."; exit 0; }
 
@@ -131,26 +229,12 @@ abs="$WALLPAPER_DIR/$selected"
 [[ -f "$abs" ]] || { echo "File vanished: $abs" >&2; exit 1; }
 
 # ----------------------------------------------------------------------
-# Confirm before applying to every Space
-#   Show the (orientation-correct) selection inline and ask for a yes.
-#   Reuses the cached thumbnail the fzf preview already generated.
+# Confirm before applying to every Space.
+# Straight to the current pane, which is the case that already works.
 # ----------------------------------------------------------------------
-cache_dir="${TMPDIR:-/tmp}/wallpaper-preview"
-mkdir -p "$cache_dir"
-key="$(printf '%s' "$abs" | shasum | cut -d' ' -f1)"
-mtime="$(stat -f %m "$abs" 2>/dev/null || echo 0)"
-norm="$cache_dir/${key}-${mtime}.png"
-if [[ ! -f "$norm" ]]; then
-    if qlmanage -t -s 2000 -o "$cache_dir" "$abs" >/dev/null 2>&1 \
-       && [[ -f "$cache_dir/$(basename "$abs").png" ]]; then
-        mv -f "$cache_dir/$(basename "$abs").png" "$norm"
-    else
-        norm="$abs"
-    fi
-fi
-
+norm="$(normalize "$abs")"
 printf '\n'
-"$WEZTERM_BIN" imgcat --width 60 --height 20 "$norm" 2>/dev/null || true
+chafa_render "$norm" 60x20 || true
 printf '\n'
 printf 'Set "%s" as the wallpaper on EVERY Space?\n' "$selected"
 read -r -p "[y/N] " reply < /dev/tty || reply=""
@@ -161,18 +245,13 @@ esac
 
 # ----------------------------------------------------------------------
 # Apply to every Space (SIP-safe, no DB edits)
-#   Walk across Spaces with the default Ctrl+Left / Ctrl+Right shortcuts
-#   and set the visible desktop on each. Override with SPACES=N if needed.
 # ----------------------------------------------------------------------
-
 detect_spaces() {
-    # yabai queries work without the scripting addition (SIP-safe)
     if command -v yabai >/dev/null 2>&1; then
         local n
         n="$(yabai -m query --spaces 2>/dev/null | grep -c '"index"')"
         [[ "$n" =~ ^[0-9]+$ ]] && (( n > 0 )) && { echo "$n"; return; }
     fi
-    # Fallback: read live prefs through cfprefsd, not the stale file
     defaults read com.apple.spaces 2>/dev/null | grep -c "ManagedSpaceID"
 }
 
@@ -185,10 +264,8 @@ set_visible_desktop() {
 space_left()  { osascript -e 'tell application "System Events" to key code 123 using control down'; }
 space_right() { osascript -e 'tell application "System Events" to key code 124 using control down'; }
 
-# Go to the leftmost Space (pressing Left at the edge is a harmless no-op)
 for (( i = 0; i < SPACES; i++ )); do space_left; sleep 0.35; done
 
-# Walk right, setting each Space as we land on it
 for (( i = 0; i < SPACES; i++ )); do
     set_visible_desktop
     sleep 0.2
