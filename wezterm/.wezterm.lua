@@ -14,6 +14,7 @@ config.font = wezterm.font_with_fallback({
 	"SF Pro",
 })
 config.font_size = 16
+config.line_height = 1.10
 
 config.enable_tab_bar = false
 config.window_decorations = "RESIZE"
@@ -46,6 +47,6 @@ config.keys = {
 		action = wezterm.action.DisableDefaultAssignment,
 	},
 }
-config.window_background_opacity = 0.95
+config.window_background_opacity = 0.90
 
 return config

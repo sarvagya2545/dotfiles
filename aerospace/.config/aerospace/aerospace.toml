@@ -78,8 +78,8 @@ key-mapping.preset = 'qwerty'
 gaps.inner.horizontal = 0
 gaps.inner.vertical =   0
 gaps.outer.left =       0
-gaps.outer.bottom =     -1
-gaps.outer.top =        1
+gaps.outer.bottom =     0
+gaps.outer.top =        0
 gaps.outer.right =      0
 
 # 'main' binding mode declaration
