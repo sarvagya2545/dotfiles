@@ -17,7 +17,7 @@ $character"""
 [hostname]
 format = '[$ssh_symbol$hostname ]($style)'
 disabled = false
-aliases = { 'coresight-dev-sarvagya' = 'gcp-dev' }
+aliases = { 'coresight-dev-sarvagya' = 'gcp-dev', 'ip-172-31-10-12' = 'vm' }
 
 [directory]
 truncation_length = 3
