@@ -1,49 +1,48 @@
 #!/bin/bash
-MPC=/opt/local/bin/mpc
-JQ=/usr/local/bin/jq
-SRC_FILE=/tmp/sketchybar_media_source
 
-STATE="$($MPC status '%state%' 2>/dev/null)"
+find_bin() {
+  local name="$1"; shift
+  local p
+  for p in "$@"; do
+    [ -x "$p" ] && { printf '%s' "$p"; return 0; }
+  done
+  p="$(command -v "$name" 2>/dev/null)" && { printf '%s' "$p"; return 0; }
+  return 1
+}
 
-if [ "$STATE" = "playing" ]; then
-  # mpd playing: it takes priority
-  TITLE="$($MPC -f '%title%' current)"
-  ARTIST="$($MPC -f '%artist%' current)"
-  [ -n "$ARTIST" ] && MEDIA="$TITLE - $ARTIST" || MEDIA="$TITLE"
-  echo "mpd" > "$SRC_FILE"
-  sketchybar --set "$NAME" label="$MEDIA" drawing=on
+MPC="$(find_bin mpc /opt/local/bin/mpc /opt/homebrew/bin/mpc /usr/local/bin/mpc)"
+JQ="$(find_bin jq /opt/homebrew/bin/jq /usr/local/bin/jq /opt/local/bin/jq /usr/bin/jq)"
+MC="$(find_bin media-control /opt/homebrew/bin/media-control /usr/local/bin/media-control)"
 
-elif [ "$SENDER" = "media_change" ]; then
-  # system event (browser, Music.app, ...)
-  SYS_STATE="$(echo "$INFO" | $JQ -r '.state')"
-  if [ "$SYS_STATE" = "playing" ]; then
-    TITLE="$(echo "$INFO" | $JQ -r '.title')"
-    ARTIST="$(echo "$INFO" | $JQ -r '.artist')"
-    [ -n "$ARTIST" ] && MEDIA="$TITLE - $ARTIST" || MEDIA="$TITLE"
-    echo "system" > "$SRC_FILE"
-    sketchybar --set "$NAME" label="$MEDIA" drawing=on
-  else
-    echo "none" > "$SRC_FILE"
-    sketchybar --set "$NAME" drawing=off
-  fi
+show() {
+  local title="$1" artist="$2" media
+  if [ -n "$artist" ]; then media="$title - $artist"; else media="$title"; fi
+  sketchybar --set "$NAME" label="$media" drawing=on
+  exit 0
+}
 
-else
-  # Timer tick, mpd not playing.
-  # Only clear the label if mpd was the one who set it.
-  if [ "$(cat "$SRC_FILE" 2>/dev/null)" = "mpd" ]; then
-    echo "none" > "$SRC_FILE"
-    sketchybar --set "$NAME" drawing=off
-  fi
-  # If "system" owns it, leave it alone — media_change will manage it.
+# 1. mpd, if it's installed and playing.
+if [ -n "$MPC" ] && [ "$("$MPC" status '%state%' 2>/dev/null)" = "playing" ]; then
+  show "$("$MPC" -f '%title%' current 2>/dev/null)" \
+       "$("$MPC" -f '%artist%' current 2>/dev/null)"
 fi
 
-# #!/bin/bash
-#
-# STATE="$(echo "$INFO" | jq -r '.state')"
-# echo "$(date) INFO=$INFO" >> /tmp/media_debug.log
-# if [ "$STATE" = "playing" ]; then
-#   MEDIA="$(echo "$INFO" | jq -r '.title + " - " + .artist')"
-#   sketchybar --set $NAME label="$MEDIA" drawing=on
-# else
-#   sketchybar --set $NAME drawing=off
-# fi
+# 2. media-control, which works on every macOS including 15.4 and later.
+if [ -n "$MC" ] && [ -n "$JQ" ]; then
+  JSON="$("$MC" get --no-artwork 2>/dev/null)"
+  if [ "$(printf '%s' "$JSON" | "$JQ" -r '.playing // empty')" = "true" ]; then
+    show "$(printf '%s' "$JSON" | "$JQ" -r '.title // empty')" \
+         "$(printf '%s' "$JSON" | "$JQ" -r '.artist // empty')"
+  fi
+fi
+
+# 3. Old built-in media_change event. Only fires on macOS before 15.4.
+if [ "$SENDER" = "media_change" ] && [ -n "$JQ" ]; then
+  if [ "$(printf '%s' "$INFO" | "$JQ" -r '.state // empty')" = "playing" ]; then
+    show "$(printf '%s' "$INFO" | "$JQ" -r '.title // empty')" \
+         "$(printf '%s' "$INFO" | "$JQ" -r '.artist // empty')"
+  fi
+fi
+
+# Nothing playing anywhere.
+sketchybar --set "$NAME" drawing=off
